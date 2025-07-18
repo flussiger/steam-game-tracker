@@ -2,13 +2,84 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <link rel="stylesheet" href="styles.css" />
   <title>Meine Steam Spiele</title>
 </head>
 <body>
-  <h1>Meine Steam Spiele</h1>
+  <h1 id="page-title">Meine Steam Spiele</h1>
   <ul id="game-list">Lade Spiele...</ul>
 
-  <script src="app.js"></script>
+  <script>
+    // Fetch player info first to get the name
+    fetch("http://localhost:8000/api/player")
+      .then(response => {
+        if (response.ok) {
+          return response.json();
+        }
+        throw new Error("Could not fetch player info");
+      })
+      .then(players => {
+        if (players && players.length > 0) {
+          const playerName = players[0].personaname;
+          document.getElementById("page-title").textContent = `${playerName}s Steam Spiele`;
+        }
+      })
+      .catch(err => {
+        console.log("Could not fetch player name:", err);
+        // Keep default title if player info fails
+      });
+
+    // Fetch games from backend and show them in a list
+    console.log("Starting to fetch games...");
+    fetch("http://localhost:8000/api/games")
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(games => {
+        
+        const list = document.getElementById("game-list");
+        list.innerHTML = ""; // Clear loading text
+
+        if (!games || !Array.isArray(games) || games.length === 0) {
+          list.textContent = `Keine Spiele gefunden. Received: ${JSON.stringify(games)}`;
+          return;
+        }
+
+        
+        // Sort games by playtime (most to least played)
+        const sortedGames = games.sort((a, b) => b.playtime_forever - a.playtime_forever);
+        
+        sortedGames.forEach((game, index) => {
+          const li = document.createElement("li");
+          
+          // Create image element
+          const img = document.createElement("img");
+          img.src = game.img_icon_url ? `https://steamcdn-a.akamaihd.net/steam/apps/${game.appid}/header.jpg` : 'https://via.placeholder.com/150';
+          img.style.width = "60px";
+          img.style.height = "30px";
+          img.style.marginRight = "10px";
+          img.style.verticalAlign = "middle";
+          
+          // Playtime is in minutes, convert to hours rounded
+          const hours = Math.round(game.playtime_forever / 60);
+          
+          // Add image and text to list item
+          li.appendChild(img);
+          li.appendChild(document.createTextNode(`${game.name} — ${hours} Stunden gespielt`));
+          li.style.display = "flex";
+          li.style.alignItems = "center";
+          li.style.marginBottom = "5px";
+          
+          list.appendChild(li);
+        });
+      })
+      .catch(err => {
+        console.error("Fetch error:", err);
+        const list = document.getElementById("game-list");
+        list.textContent = "Fehler beim Laden der Spiele: " + err.message;
+      });
+  </script>
 </body>
 </html>

@@ -1,10 +1,7 @@
 import requests
 from config import STEAM_API_KEY, STEAM_ID
 
-def get_steam_games():
-    print(f"Using API Key: {STEAM_API_KEY}")
-    print(f"Using Steam ID: {STEAM_ID}")
-    
+def get_steam_games(): 
     url = f"https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/"
     params = {
         "key": STEAM_API_KEY,
@@ -14,18 +11,10 @@ def get_steam_games():
         "include_played_free_games": "true"
     }
 
-    print(f"Making request to: {url}")
-    print(f"With params: {params}")
-
     try:
-        response = requests.get(url, params=params)
-        print(f"Response status: {response.status_code}")
-        print(f"Response content: {response.text[:500]}...")  # First 500 chars
-        
+        response = requests.get(url, params=params)        
         if response.status_code == 200:
-            data = response.json()
-            print(f"JSON response: {data}")
-            
+            data = response.json()            
             if "response" in data and "games" in data["response"]:
                 return data["response"]["games"]
             else:
@@ -33,6 +22,32 @@ def get_steam_games():
                 return []
         else:
             print(f"Error: HTTP {response.status_code}")
+            return []
+            
+    except Exception as e:
+        print(f"Exception occurred: {e}")
+        return []
+
+
+def get_player_info(): 
+    url = f"https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/"
+    params = {
+        "key": STEAM_API_KEY,
+        "steamids": STEAM_ID,
+        "format": "json",
+    }
+
+    try:
+        response2 = requests.get(url, params=params)        
+        if response2.status_code == 200:
+            data2 = response2.json()            
+            if "response" in data2 and "players" in data2["response"]:
+                return data2["response"]["players"]
+            else:
+                print("No player found in response")
+                return []
+        else:
+            print(f"Error: HTTP {response2.status_code}")
             return []
             
     except Exception as e:
